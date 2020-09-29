@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<link href="/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" />
+<script src="http://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script>
+$(() => {
+	$('.deleteBtn').on('click', (event) => {
+		//フォームが送信された時に、デフォルトだとフォームを送信するための通信がされてしまうので、preventDefault()を使用してデフォルトのイベントを止めます。
+		//クリックなどのイベントは、子要素から親要素へと伝播される（バブリング）。preventDefault()を使用すると、その要素のイベントをキャンセルする。
+		//ここで preventDefault()を使う意味は全くわからない。意味不明。
+		event.preventDefault();
+		// 先ずtargetでeventが発生したDOM要素を取得、次にその要素の親の親要素を取得、
+		// 最後にその要素内にある全ての'td'要素をfindで取得し、変数tdListに代入
+		let tdList = $(event.target).parent().parent().find('td');
+		
+		let id = $(tdList[0]).text();
+		let jsonString = {
+				'id': id,
+				'goodsName': $(tdList[1]).text(),
+				'price': ''
+		};
+		// $.ajax関数は、戻り値として XMLHttpRequestオブジェクトを返す。
+		// ここでサーバーに対しての通信を行う。情報の指定（ここではdataに格納）、送信先（コントローラーのdeleteAip）、型（ここではJson）等を指定。
+		$.ajax({
+			type: 'POST',
+			url: '/ecsite/admin/api/deleteGoods',
+			data: JSON.stringify(jsonString),  // JSON.stringify()の引数に指定したオブジェクトデータをJSON化する。
+			contentType: 'application/json',
+			scriptCharset: 'utf-8'
+		})
+		// サーバーとの通信に成功した場合の処理
+		.then((result) => {
+				console.log(result);
+				alert(`商品[ ${jsonString.goodsName} ] を削除しました。`);
+				$(tdList).parent().remove();
+			}, () => {　// サーバーとの通信に失敗した場合の処理
+				console.error('Error: ajax connection failed.');
+			}
+		);
+	});
+});
+</script>
+<title>ECサイト</title>
+</head>
+<body>
+
+<header>
+	<h1>My EC Site</h1>
+</header>
+
+<table id="adminTable">
+	<thead>
+		<tr>
+			<th>ID</th><th>商品名</th><th>価格</th><th>削除</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr th:each="item: ${goods}">
+			<td th:text="${item.id}" />
+			<td th:text="${item.goodsName}" />
+			<td th:text="${item.price}" />
+			<td><button type="submit" class="deleteBtn">削除</button></td>
+		</tr>
+	</tbody>
+</table>
+<form name="goodsForm" id="adminPage" method="post"
+		action="/ecsite/admin/goodsMst" th:action="@{/ecsite/admin/goodsMst}">
+	<button type="submit" th:if="${userName != null}">新規追加</button>
+	<input type="hidden" name="userName" th:value="${userName}" />
+	<input type="hidden" name="password" th:value="${password}" />		
+</form>
+
+</body>
+</html>
